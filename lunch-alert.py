@@ -53,7 +53,7 @@ def get_lunch_summary(event):
     if match:
         summary = match.group('summary').strip()
     else:
-        print "failed to parse menu entry"
+        print("failed to parse menu entry")
     return summary
 
 
