@@ -45,7 +45,7 @@ def fetch_lunch_event():
 
     # Breakfast usually has the summary "1. <breakfast description>" so let's start by
     # removing that entry
-    events = filter(lambda event: not event.summary.startswith("1."))
+    events = filter(lambda event: not event.summary.startswith("1."), events)
 
     # The lunch summary is usually of the form "2. <lunch description>" so let's see if
     # we can find the right entry easily
