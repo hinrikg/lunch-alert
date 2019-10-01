@@ -40,12 +40,14 @@ def is_the_weekend():
 
 def fetch_lunch_event():
     events = fetch_events(LUNCH_CALENDAR_URL)
-    if len(events) == 0:
+    if not events:
         return None
 
     # Breakfast usually has the summary "1. <breakfast description>" so let's start by
     # removing that entry
     events = filter(lambda event: not event.summary.startswith("1."), events)
+    if not events:
+        return None
 
     # The lunch summary is usually of the form "2. <lunch description>" so let's see if
     # we can find the right entry easily
@@ -53,9 +55,14 @@ def fetch_lunch_event():
         if event.summary.startswith("2."):
             return event
 
-    # last resort is to just sort the entries and hope that the lunch entry ends up last
-    events = sorted(events, key=lambda e: e.summary)
-    return events[-1] if events else None
+    # Otherwise let's sort the menu by the event start time and use the last event of
+    # the day
+    return sorted(events, key=lambda e: delta_from_noon(e.start), reverse=True)[0]
+
+
+def delta_from_noon(dt):
+    noon = datetime.combine(datetime.today(), datetime.time(12))
+    return abs(noon - dt)
 
 
 def fetch_holiday_event():
