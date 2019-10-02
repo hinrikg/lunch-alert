@@ -1,4 +1,5 @@
-from datetime import datetime
+from datetime import datetime, time, timedelta
+from dateutil.tz import UTC
 from icalevents import icalevents
 import os
 import re
@@ -45,7 +46,7 @@ def fetch_lunch_event():
 
     # Breakfast usually has the summary "1. <breakfast description>" so let's start by
     # removing that entry
-    events = filter(lambda event: not event.summary.startswith("1."), events)
+    events = list(filter(lambda event: not event.summary.startswith("1."), events))
     if not events:
         return None
 
@@ -55,14 +56,14 @@ def fetch_lunch_event():
         if event.summary.startswith("2."):
             return event
 
-    # Otherwise let's sort the menu by the event start time and use the last event of
-    # the day
-    return sorted(events, key=lambda e: delta_from_noon(e.start), reverse=True)[0]
+    # Otherwise let's sort the menu by the the absolute delta from now and use the
+    # event that's closest
+    return sorted(events, key=lambda e: delta_from_now(e.start))[0]
 
 
-def delta_from_noon(dt):
-    noon = datetime.combine(datetime.today(), datetime.time(12))
-    return abs(noon - dt)
+def delta_from_now(dt):
+    now = datetime.utcnow()
+    return abs(now.astimezone(UTC) - dt.astimezone(UTC))
 
 
 def fetch_holiday_event():
@@ -72,8 +73,9 @@ def fetch_holiday_event():
 
 
 def fetch_events(url):
-    now = datetime.utcnow()
-    return icalevents.events(url, start=now, end=now)
+    start = datetime.combine(datetime.today(), time(0))
+    end = start + timedelta(days=1)
+    return icalevents.events(url, start=start, end=end)
 
 
 def send_holiday_message(event):
