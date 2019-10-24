@@ -1,4 +1,4 @@
-from datetime import datetime, time, timedelta
+from datetime import date, datetime, time, timedelta
 from dateutil.tz import UTC
 from icalevents import icalevents
 import os
@@ -40,7 +40,7 @@ def is_the_weekend():
 
 
 def fetch_lunch_event():
-    events = fetch_events(LUNCH_CALENDAR_URL)
+    events = fetch_events_today(LUNCH_CALENDAR_URL)
     if not events:
         return None
 
@@ -67,14 +67,17 @@ def delta_from_now(dt):
 
 
 def fetch_holiday_event():
-    events = fetch_events(HOLIDAY_CALENDAR_URL)
+    events = fetch_events_today(HOLIDAY_CALENDAR_URL)
     # let's just naively use the first available entry
     return events[0] if events else None
 
 
-def fetch_events(url):
-    start = datetime.combine(datetime.today(), time(0))
-    end = start + timedelta(days=1)
+def fetch_events_today(url):
+    # for some reason icalevents thinks it's cute to return all-day events from the
+    # day before the requested start date, so we need to forcefully make sure that the
+    # start and end parameters are defined 'within' today.
+    start = date.today() + timedelta(seconds=1)
+    end = date.today() + timedelta(days=1) - timedelta(seconds=1)
     return icalevents.events(url, start=start, end=end)
 
 
