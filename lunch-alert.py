@@ -44,14 +44,17 @@ def fetch_lunch_event():
     if not events:
         return None
 
-    # Breakfast usually has the summary "1. <breakfast description>" so let's start by
-    # removing that entry
-    events = list(filter(lambda event: not event.summary.startswith("1."), events))
+    # Filter out all entries that are not today and also filter out the breakfast entry
+    # which usually has the summary "1. <breakfast description>".
+    events = [
+        event
+        for event in events
+        if event.start.date() == date.today() and not event.summary.startswith("1.")
+    ]
     if not events:
         return None
 
-    # The lunch summary is usually of the form "2. <lunch description>" so let's see if
-    # we can find the right entry easily
+    # The lunch summary is usually of the form "2. <lunch description>"
     for event in events:
         if event.summary.startswith("2."):
             return event
