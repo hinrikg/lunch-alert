@@ -98,8 +98,6 @@ def get_lunch_summary(event):
     match = re.match(r"(?:\d+\.?)?(?P<summary>.*)", summary)
     if match:
         summary = match.group("summary").strip()
-    else:
-        print("failed to parse menu entry")
     return summary
 
 
