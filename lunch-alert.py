@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime
 from dateutil.tz import UTC
 from icalevents import icalevents
 import os
@@ -40,27 +40,20 @@ def is_the_weekend():
 
 def fetch_lunch_event():
     events = fetch_events_today(LUNCH_CALENDAR_URL)
-    if not events:
-        return None
 
-    # Filter out all entries that are not today and also filter out the breakfast entry
-    # which usually has the summary "1. <breakfast description>".
-    events = [
-        event
-        for event in events
-        if event.start.date() == date.today() and not event.summary.startswith("1.")
-    ]
-    if not events:
-        return None
+    # Filter out the breakfast entry which usually has the summary "1. <description>"
+    events = list(filter(lambda e: not e.summary.startswith("1."), events))
 
-    # The lunch summary is usually of the form "2. <lunch description>"
+    # The lunch summary is usually of the form "2. <description>"
     for event in events:
         if event.summary.startswith("2."):
             return event
 
-    # Otherwise let's sort the menu by the the absolute delta from now and use the
+    # Otherwise let's sort the menu by the the absolute delta time from now and use the
     # event that's closest
-    return sorted(events, key=lambda e: delta_from_now(e.start))[0]
+    events = sorted(events, key=lambda e: delta_from_now(e.start))
+    if events:
+        return events[0]
 
 
 def delta_from_now(dt):
@@ -76,11 +69,13 @@ def fetch_holiday_event():
 
 def fetch_events_today(url):
     # for some reason icalevents thinks it's cute to return all-day events from the
-    # day before the requested start date, so we need to forcefully make sure that the
-    # start and end parameters are defined 'within' today.
-    start = date.today() + timedelta(seconds=1)
-    end = date.today() + timedelta(days=1) - timedelta(seconds=1)
-    return icalevents.events(url, start=start, end=end)
+    # day before (and sometimes after) the requested start date, so we need to filter
+    # those out manually.
+    return [
+        event
+        for event in icalevents.events(url, start=date.today())
+        if event.start.date() == date.today()
+    ]
 
 
 def send_holiday_message(event):
