@@ -25,11 +25,10 @@ def main():
         return
 
     holiday_event = fetch_holiday_event()
+    lunch_event = fetch_lunch_event()
     if holiday_event:
         send_holiday_message(holiday_event)
-
-    lunch_event = fetch_lunch_event()
-    if lunch_event:
+    elif lunch_event:
         send_lunch_message(lunch_event)
     else:
         send_unknown_lunch_message()
