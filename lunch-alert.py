@@ -1,10 +1,16 @@
 from datetime import date, datetime
-from dateutil.tz import UTC
-from icalevents import icalevents
+import logging
 import os
 import re
-import requests
 
+from dateutil.tz import UTC
+from icalevents import icalevents
+import requests
+import timber
+
+
+TIMBER_API_KEY = os.environ.get("TIMBER_API_KEY", None)
+TIMBER_SOURCE_ID = os.environ.get("TIMBER_SOURCE_ID", None)
 
 LUNCH_CALENDAR_URL = os.environ["LUNCH_CALENDAR_URL"]
 HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
@@ -20,8 +26,22 @@ UNKNOWN_LUNCH_MESSAGE = (
 )
 
 
+logging.basicConfig()
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+if TIMBER_API_KEY and TIMBER_SOURCE_ID:
+    timber_handler = timber.TimberHandler(
+        source_id=TIMBER_SOURCE_ID, api_key=TIMBER_API_KEY
+    )
+    logger.addHandler(timber_handler)
+
+
 def main():
+    logger.info("starting")
+
     if is_the_weekend():
+        logger.info("stopping - it's the weekend")
         return
 
     holiday_event = fetch_holiday_event()
@@ -31,6 +51,7 @@ def main():
     elif lunch_event:
         send_lunch_message(lunch_event)
     else:
+        logger.info("no event found - sending")
         send_unknown_lunch_message()
 
 
@@ -71,18 +92,25 @@ def fetch_events_today(url):
     # for some reason icalevents thinks it's cute to return all-day events from the
     # day before (and sometimes after) the requested start date, so we need to filter
     # those out manually.
-    return [
+    logger.info("fetch_events_today %s", url)
+    events = [
         event
         for event in icalevents.events(url, start=date.today())
         if event.start.date() == date.today()
     ]
+    logger.info("found %s events:", len(events))
+    for i, event in enumerate(events):
+        logger.info("%s: %s", i, event)
+    return events
 
 
 def send_holiday_message(event):
+    logger.info("send_holiday_message %s", event)
     send_message(HOLIDAY_MESSAGE_TEMPLATE.format(event.summary))
 
 
 def send_lunch_message(event):
+    logger.info("send_lunch_message %s", event)
     summary = get_lunch_summary(event)
     text = LUNCH_MESSAGE_TEMPLATE.format(summary)
     send_message(text)
@@ -101,8 +129,12 @@ def send_unknown_lunch_message():
 
 
 def send_message(text):
+    logger.info("send_message %s", text)
     requests.post(SLACK_URL, json={"text": text})
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception:
+        logger.exception("Uncaught exception")
