@@ -95,13 +95,28 @@ def fetch_events_today(url):
     logger.info("fetch_events_today %s", url)
     events = [
         event
-        for event in icalevents.events(url, start=date.today())
+        for event in _fetch_events_with_retry(url, start=date.today())
         if event.start.date() == date.today()
     ]
     logger.info("found %s events:", len(events))
     for i, event in enumerate(events):
         logger.info("%s: %s", i, event)
     return events
+
+
+def _fetch_events_with_retry(url, start, retries=3):
+    attempts = 0
+    fetched_events = None
+    while fetched_events is None and attempts <= retries:
+        try:
+            fetched_events = icalevents.events(url, start=start)
+        except TimeoutError:
+            logger.warning("request timed out")
+            attempts += 1
+            if attempts > retries:
+                logger.error("giving up after %s retries", retries)
+                raise
+    return fetched_events
 
 
 def send_holiday_message(event):
