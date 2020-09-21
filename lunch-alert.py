@@ -18,13 +18,12 @@ SLACK_URL = os.environ["SLACK_URL"]
 
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
-HOLIDAY_MESSAGE_TEMPLATE = ":parrot: Happy {}!"
 
-LUNCH_MESSAGE_TEMPLATE = "<!here> It's lunchtime! Today we're having {}"
-UNSURE_LUNCH_MESSAGE_TEMPLATE = (
+HOLIDAY_MESSAGE = ":parrot: Happy {}!"
+LUNCH_MESSAGE = "<!here> It's lunchtime! Today we're having {}"
+UNSURE_LUNCH_MESSAGE = (
     "<!here> It's lunchtime! Today we're having either {} or {}"
 )
-
 UNKNOWN_LUNCH_MESSAGE = (
     "<!here> It's lunchtime! But unfortunately I can't read the menu for you today "
     ":weary:"
@@ -158,13 +157,13 @@ def _fetch_events_with_retry(url, start, retries=3):
 
 def send_holiday_message(event):
     logger.info("send_holiday_message %s", event)
-    send_message(HOLIDAY_MESSAGE_TEMPLATE.format(event.summary))
+    send_message(HOLIDAY_MESSAGE.format(event.summary))
 
 
 def send_lunch_message(event):
     logger.info("send_lunch_message %s", event)
     summary = get_lunch_summary(event)
-    text = LUNCH_MESSAGE_TEMPLATE.format(summary)
+    text = LUNCH_MESSAGE.format(summary)
     send_message(text)
 
 
@@ -172,7 +171,7 @@ def send_unsure_lunch_message(event_a, event_b):
     logger.info("send_unsure_lunch_message %s %s", event_a, event_b)
     summary_a = get_lunch_summary(event_a)
     summary_b = get_lunch_summary(event_b)
-    text = UNSURE_LUNCH_MESSAGE_TEMPLATE.format(summary_a, summary_b)
+    text = UNSURE_LUNCH_MESSAGE.format(summary_a, summary_b)
     send_message(text)
 
 
