@@ -6,11 +6,7 @@ import re
 from dateutil.tz import UTC
 from icalevents import icalevents
 import requests
-import timber
 
-
-TIMBER_API_KEY = os.environ.get("TIMBER_API_KEY", None)
-TIMBER_SOURCE_ID = os.environ.get("TIMBER_SOURCE_ID", None)
 
 LUNCH_CALENDAR_URL = os.environ["LUNCH_CALENDAR_URL"]
 HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
@@ -33,12 +29,6 @@ UNKNOWN_LUNCH_MESSAGE = (
 logging.basicConfig()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-if TIMBER_API_KEY and TIMBER_SOURCE_ID:
-    timber_handler = timber.TimberHandler(
-        source_id=TIMBER_SOURCE_ID, api_key=TIMBER_API_KEY
-    )
-    logger.addHandler(timber_handler)
 
 
 def main():
