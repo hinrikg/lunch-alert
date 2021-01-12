@@ -2,6 +2,7 @@ from datetime import datetime, time
 import logging
 import os
 import re
+import sys
 
 from dateutil.tz import UTC
 from icalevents import icalevents
@@ -26,7 +27,7 @@ UNKNOWN_LUNCH_MESSAGE = (
 )
 
 
-logging.basicConfig()
+logging.basicConfig(stream=sys.stdout)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
