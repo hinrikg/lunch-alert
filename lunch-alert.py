@@ -12,18 +12,26 @@ import requests
 LUNCH_CALENDAR_URL = os.environ["LUNCH_CALENDAR_URL"]
 HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
 SLACK_URL = os.environ["SLACK_URL"]
-
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
+AREA_GROUP_IDS = {
+    1: os.environ["AREA_1_GROUP_ID"],
+    2: os.environ["AREA_2_GROUP_ID"],
+    3: os.environ["AREA_3_GROUP_ID"],
+    4: os.environ["AREA_4_GROUP_ID"],
+}
 
 HOLIDAY_MESSAGE = ":parrot: Happy {}!"
-LUNCH_MESSAGE = "<!here> It's lunchtime! Today we're having {}"
+LUNCH_MESSAGE = "Good morning everyone! Today we're having {} for lunch."
 UNSURE_LUNCH_MESSAGE = (
-    "<!here> It's lunchtime! Today we're having either {} or {}"
+    "Good morning everyone! Today we're either having {} or {} for lunch."
 )
 UNKNOWN_LUNCH_MESSAGE = (
-    "<!here> It's lunchtime! But unfortunately I can't read the menu for you today "
-    ":weary:"
+    "Good morning everyone! Something is preventing me from reading the menu for you "
+    "today, sorry :weary:"
+)
+AREA_MESSAGE = (
+    "<!subteam^{group_id}> Everyone working in *AREA {number}* -- it's your turn to have lunch now."
 )
 
 
@@ -32,8 +40,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-def main():
-    logger.info("starting")
+def main(argv):
+    logger.info("starting with args {}".format(argv))
 
     if DATETIME_OVERRIDE:
         logger.info("pretending that today is {}".format(today()))
@@ -42,6 +50,19 @@ def main():
         logger.info("stopping - it's the weekend")
         return
 
+    for arg in argv:
+        if "menu" == arg:
+            logger.info("announcing today's menu")
+            menu()
+        elif arg.startswith("area_"):
+            number = int(arg.split("_")[1])
+            logger.info("announcing area lunch time")
+            area(number)
+        else:
+            logger.info("unknown argument {}".format(arg))
+
+
+def menu():
     holiday_event = fetch_holiday_event()
     lunch_events = fetch_lunch_events()
     if holiday_event:
@@ -52,6 +73,14 @@ def main():
         send_lunch_message(lunch_events[0])
     elif len(lunch_events) > 1:
         send_unsure_lunch_message(lunch_events[0], lunch_events[1])
+
+
+def area(number):
+    holiday_event = fetch_holiday_event()
+    if holiday_event:
+        logger.info("stopping - it's a holiday")
+        return
+    send_message(AREA_MESSAGE.format(number=number, group_id=AREA_GROUP_IDS[number]))
 
 
 def is_the_weekend():
@@ -200,6 +229,6 @@ def today_at(hour):
 
 if __name__ == "__main__":
     try:
-        main()
+        main(sys.argv[1:])
     except Exception:
         logger.exception("Uncaught exception")
