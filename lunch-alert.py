@@ -68,7 +68,9 @@ def menu():
     if holiday_event:
         send_holiday_message(holiday_event)
     elif lunch_events is None:
-        send_unknown_lunch_message()
+        # send_unknown_lunch_message()
+        logger.info("stopping - there's nothing on the menu")
+        return
     elif len(lunch_events) == 1:
         send_lunch_message(lunch_events[0])
     elif len(lunch_events) > 1:
