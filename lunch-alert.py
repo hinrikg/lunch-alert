@@ -14,25 +14,9 @@ HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
 SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
-AREA_GROUP_IDS = {
-    1: os.environ["AREA_1_GROUP_ID"],
-    2: os.environ["AREA_2_GROUP_ID"],
-    3: os.environ["AREA_3_GROUP_ID"],
-    4: os.environ["AREA_4_GROUP_ID"],
-}
-
-HOLIDAY_MESSAGE = ":parrot: Happy {}!"
-LUNCH_MESSAGE = "Good morning everyone! Today we're having {} for lunch."
-UNSURE_LUNCH_MESSAGE = (
-    "Good morning everyone! Today we're either having {} or {} for lunch."
-)
-UNKNOWN_LUNCH_MESSAGE = (
-    "Good morning everyone! Something is preventing me from reading the menu for you "
-    "today, sorry :weary:"
-)
-AREA_MESSAGE = (
-    "<!subteam^{group_id}> Everyone working in *AREA {number}* -- it's your turn to have lunch now."
-)
+HOLIDAY_MESSAGE = ":carrot: Happy {}!"
+MENU_MESSAGE = "Good morning everyone. Today we're having {} for lunch."
+LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
 
 
 logging.basicConfig(stream=sys.stdout)
@@ -54,10 +38,8 @@ def main(argv):
         if "menu" == arg:
             logger.info("announcing today's menu")
             menu()
-        elif arg.startswith("area_"):
-            number = int(arg.split("_")[1])
-            logger.info("announcing area lunch time")
-            area(number)
+        elif "lunch" == arg:
+            lunch()
         else:
             logger.info("unknown argument {}".format(arg))
 
@@ -67,22 +49,21 @@ def menu():
     lunch_events = fetch_lunch_events()
     if holiday_event:
         send_holiday_message(holiday_event)
-    elif lunch_events is None:
-        # send_unknown_lunch_message()
+        return
+
+    if lunch_events is None or len(lunch_events) == 0:
         logger.info("stopping - there's nothing on the menu")
         return
-    elif len(lunch_events) == 1:
-        send_lunch_message(lunch_events[0])
-    elif len(lunch_events) > 1:
-        send_unsure_lunch_message(lunch_events[0], lunch_events[1])
 
-
-def area(number):
-    holiday_event = fetch_holiday_event()
-    if holiday_event:
-        logger.info("stopping - it's a holiday")
+    if len(lunch_events) > 1:
+        logger.info("stopping - menu has two or more events")
         return
-    send_message(AREA_MESSAGE.format(number=number, group_id=AREA_GROUP_IDS[number]))
+
+    send_menu_message(lunch_events[0])
+
+
+def lunch():
+    send_message(LUNCH_MESSAGE)
 
 
 def is_the_weekend():
@@ -182,19 +163,9 @@ def send_holiday_message(event):
     send_message(HOLIDAY_MESSAGE.format(event.summary))
 
 
-def send_lunch_message(event):
-    logger.info("send_lunch_message %s", event)
-    summary = get_lunch_summary(event)
-    text = LUNCH_MESSAGE.format(summary)
-    send_message(text)
-
-
-def send_unsure_lunch_message(event_a, event_b):
-    logger.info("send_unsure_lunch_message %s %s", event_a, event_b)
-    summary_a = get_lunch_summary(event_a)
-    summary_b = get_lunch_summary(event_b)
-    text = UNSURE_LUNCH_MESSAGE.format(summary_a, summary_b)
-    send_message(text)
+def send_menu_message(event):
+    logger.info("send_menu_message %s", event)
+    send_message(MENU_MESSAGE.format(get_lunch_summary(event)))
 
 
 def get_lunch_summary(event):
@@ -203,11 +174,6 @@ def get_lunch_summary(event):
     if match:
         summary = match.group("summary").strip()
     return summary
-
-
-def send_unknown_lunch_message():
-    logger.info("send_unknown_lunch_message")
-    send_message(UNKNOWN_LUNCH_MESSAGE)
 
 
 def send_message(text):
