@@ -15,7 +15,7 @@ SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
 HOLIDAY_MESSAGE = ":carrot: Happy {}!"
-MENU_MESSAGE = "Good morning everyone. Today we're having {} for lunch."
+MENU_MESSAGE = "Good morning everyone. For lunch today we're having {}"
 LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
 
 
