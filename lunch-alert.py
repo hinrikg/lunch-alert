@@ -14,7 +14,7 @@ HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
 SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
-HOLIDAY_MESSAGE = ":carrot: Happy {}!"
+HOLIDAY_MESSAGE = ":cake: Happy {}!"
 MENU_MESSAGE = "Good morning everyone. For lunch today we're having {}"
 LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
 
@@ -46,11 +46,11 @@ def main(argv):
 
 def menu():
     holiday_event = fetch_holiday_event()
-    lunch_events = fetch_lunch_events()
     if holiday_event:
         send_holiday_message(holiday_event)
         return
 
+    lunch_events = fetch_lunch_events()
     if lunch_events is None or len(lunch_events) == 0:
         logger.info("stopping - there's nothing on the menu")
         return
@@ -63,6 +63,11 @@ def menu():
 
 
 def lunch():
+    holiday_event = fetch_holiday_event()
+    if holiday_event:
+        send_holiday_message(holiday_event)
+        return
+
     send_message(LUNCH_MESSAGE)
 
 
