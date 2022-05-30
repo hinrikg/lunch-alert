@@ -80,7 +80,7 @@ def menu():
 def lunch():
     holiday_event = fetch_holiday_event()
     if holiday_event:
-        send_holiday_message(holiday_event)
+        logger.info("stopping - happy holidays!")
         return
 
     send_message(LUNCH_MESSAGE)
@@ -89,7 +89,7 @@ def lunch():
 def area(number):
     holiday_event = fetch_holiday_event()
     if holiday_event:
-        send_holiday_message(holiday_event)
+        logger.info("stopping - happy holidays!")
         return
 
     send_message(AREA_MESSAGE.format(number=number, group_id=AREA_GROUP_IDS[number]))
