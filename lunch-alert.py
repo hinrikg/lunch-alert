@@ -10,7 +10,13 @@ import requests
 
 
 LUNCH_CALENDAR_URL = os.environ["LUNCH_CALENDAR_URL"]
+LUNCH_CALENDAR_BASIC_AUTH_TOKEN = os.environ.get(
+    "LUNCH_CALENDAR_BASIC_AUTH_TOKEN", None
+)
 HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
+HOLIDAY_CALENDAR_BASIC_AUTH_TOKEN = os.environ.get(
+    "HOLIDAY_CALENDAR_BASIC_AUTH_TOKEN", None
+)
 SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
 
@@ -77,7 +83,9 @@ def is_the_weekend():
 
 
 def fetch_lunch_events():
-    events = fetch_events_today(LUNCH_CALENDAR_URL)
+    events = fetch_events_today(
+        LUNCH_CALENDAR_URL, basic_auth_token=LUNCH_CALENDAR_BASIC_AUTH_TOKEN
+    )
 
     # The menu calendar is notoriously unreliable in terms of event data accuracy.
     # Sometimes the events are all day events, sometimes they have a start time,
@@ -133,14 +141,16 @@ def fetch_holiday_event():
     return events[0] if events else None
 
 
-def fetch_events_today(url):
+def fetch_events_today(url, basic_auth_token=None):
     # for some reason icalevents thinks it's cute to return all-day events from the
     # day before (and sometimes after) the requested start date, so we need to filter
     # those out manually.
     logger.info("fetch_events_today %s", url)
     events = [
         event
-        for event in _fetch_events_with_retry(url, start=today())
+        for event in _fetch_events_with_retry(
+            url, start=today(), basic_auth_token=basic_auth_token
+        )
         if event.start.date() == today()
     ]
     logger.info("found %s events:", len(events))
@@ -149,12 +159,18 @@ def fetch_events_today(url):
     return events
 
 
-def _fetch_events_with_retry(url, start, retries=3):
+def _fetch_events_with_retry(url, start, basic_auth_token=None, retries=3):
     attempts = 0
     fetched_events = None
     while fetched_events is None and attempts <= retries:
         try:
-            fetched_events = icalevents.events(url, start=start)
+            headers = {}
+            if basic_auth_token:
+                headers["Authorization"] = "Basic {}".format(basic_auth_token)
+            response = requests.get(url, headers=headers)
+            fetched_events = icalevents.events(
+                string_content=response.content, start=start
+            )
         except TimeoutError:
             logger.warning("request timed out")
             attempts += 1
