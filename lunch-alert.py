@@ -22,7 +22,7 @@ OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY", None)
 
 HOLIDAY_MESSAGE = ":cake: Happy {}!"
 MENU_MESSAGE = "Good morning everyone. For lunch today we're having {}"
-LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
+LUNCH_MESSAGE = "<!here> It's lunchtime!"
 
 
 logging.basicConfig(stream=sys.stdout)
