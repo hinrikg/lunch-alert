@@ -13,21 +13,10 @@ LUNCH_CALENDAR_URL = os.environ["LUNCH_CALENDAR_URL"]
 HOLIDAY_CALENDAR_URL = os.environ["HOLIDAY_CALENDAR_URL"]
 SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
-AREA_GROUP_IDS = {
-    1: os.environ["AREA_1_GROUP_ID"],
-    2: os.environ["AREA_2_GROUP_ID"],
-    3: os.environ["AREA_3_GROUP_ID"],
-    4: os.environ["AREA_4_GROUP_ID"],
-}
 
 HOLIDAY_MESSAGE = ":cake: Happy {}!"
 MENU_MESSAGE = "Good morning everyone. For lunch today we're having {}"
 LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
-LUNCH_AREA_MESSAGE = ""
-AREA_MESSAGE = (
-    "<!subteam^{group_id}> Everyone working in *AREA {number}* -- it's your turn to have lunch now."
-)
-
 
 logging.basicConfig(stream=sys.stdout)
 logger = logging.getLogger()
@@ -52,11 +41,8 @@ def main(argv):
     elif command == "lunch":
         logger.info("announcing lunch time")
         lunch()
-    elif command == "area":
-        logger.info("announcing area lunch time")
-        area(int(argv[1]))
     else:
-        logger.info("unknown argument {}".format(arg))
+        logger.info("unknown command {}".format(command))
 
 
 def menu():
@@ -84,15 +70,6 @@ def lunch():
         return
 
     send_message(LUNCH_MESSAGE)
-
-
-def area(number):
-    holiday_event = fetch_holiday_event()
-    if holiday_event:
-        logger.info("stopping - happy holidays!")
-        return
-
-    send_message(AREA_MESSAGE.format(number=number, group_id=AREA_GROUP_IDS[number]))
 
 
 def is_the_weekend():
