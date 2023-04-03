@@ -1,7 +1,6 @@
 from datetime import datetime, time
 import logging
 import os
-import re
 import sys
 
 from dateutil.tz import UTC
@@ -19,10 +18,12 @@ HOLIDAY_CALENDAR_BASIC_AUTH_TOKEN = os.environ.get(
 )
 SLACK_URL = os.environ["SLACK_URL"]
 DATETIME_OVERRIDE = os.environ.get("DATETIME_OVERRIDE", None)
+OPEN_AI_API_KEY = os.environ.get("OPEN_AI_API_KEY", None)
 
 HOLIDAY_MESSAGE = ":cake: Happy {}!"
 MENU_MESSAGE = "Good morning everyone. For lunch today we're having {}"
 LUNCH_MESSAGE = "<!here> It's lunchtime! Go get yourself something nice to eat."
+
 
 logging.basicConfig(stream=sys.stdout)
 logger = logging.getLogger()
@@ -182,20 +183,36 @@ def _fetch_events_with_retry(url, start, basic_auth_token=None, retries=3):
 
 def send_holiday_message(event):
     logger.info("send_holiday_message %s", event)
-    send_message(HOLIDAY_MESSAGE.format(event.summary))
+    send_message(get_holiday_summary(event))
 
 
 def send_menu_message(event):
     logger.info("send_menu_message %s", event)
-    send_message(MENU_MESSAGE.format(get_lunch_summary(event)))
+    send_message(get_lunch_summary(event))
+
+
+def get_holiday_summary(event):
+    if OPEN_AI_API_KEY:
+        logger.info("We have an OpenAI API key! Let's delegate some work to the AI ...")
+        try:
+            return get_ai_holiday_announcement(
+                api_key=OPEN_AI_API_KEY, holiday=event.summary
+            )
+        except Exception:
+            logger.exception("The AI failed")
+    return HOLIDAY_MESSAGE.format(event.summary)
 
 
 def get_lunch_summary(event):
-    summary = event.summary
-    match = re.match(r"(?:\d+\.? *)?(?P<summary>.*)", summary)
-    if match:
-        summary = match.group("summary").strip()
-    return summary
+    if OPEN_AI_API_KEY:
+        logger.info("We have an OpenAI API key! Let's delegate some work to the AI ...")
+        try:
+            return get_ai_menu_announcement(
+                api_key=OPEN_AI_API_KEY, menu_text=event.summary
+            )
+        except Exception:
+            logger.exception("The AI failed")
+    return MENU_MESSAGE.format(event.summary)
 
 
 def send_message(text):
@@ -215,6 +232,83 @@ def today():
 
 def today_at(hour):
     return datetime.combine(today(), time(hour=hour, tzinfo=UTC))
+
+
+def get_ai_menu_announcement(api_key, menu_text):
+    import openai
+
+    openai.api_key = api_key
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    "I want you to act as a fun and quirky AI who announces the lunch "
+                    "menu. It's early in the morning on a {day}. Your purpose is to "
+                    "announce what's for lunch today for employees of a game "
+                    "development company called CCP, creators of the space MMO Eve "
+                    "Online. Feel free to use puns, jokes, or funny descriptions to "
+                    "make the text more enjoyable. Without adding any food items that "
+                    "aren't already mentioned, write a lunch announcement for the "
+                    'following menu: "{menu}". Finally, finish with a catchy phrase or '
+                    "a joke to make everyone smile and look forward to their lunch "
+                    "break!"
+                ).format(
+                    day=now().strftime("%A"),
+                    menu=menu_text,
+                ),
+            }
+        ],
+    )
+    return completion.choices[0].message.content
+
+
+def get_ai_holiday_announcement(api_key, holiday):
+    import openai
+
+    openai.api_key = api_key
+    holiday_query = 'Do you know which holiday the following refers to: "{}"?'.format(
+        holiday
+    )
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": holiday_query,
+            },
+        ],
+    )
+    holiday_explanation = completion.choices[0].message.content
+
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": holiday_query,
+            },
+            {
+                "role": "assistant",
+                "content": holiday_explanation,
+            },
+            {
+                "role": "user",
+                "content": (
+                    "I want you to act as a fun and quirky AI who announces the lunch "
+                    "menu for employees of a game development company called CCP, "
+                    "creators of the space MMO Eve Online. Feel free to use puns, "
+                    "jokes, or funny descriptions to make the text more enjoyable. "
+                    "Don't announce anything for lunch today, or say anything about "
+                    "any future lunches, because today is actually the aforementioned "
+                    "holiday. Just make an announcement about the holiday and end with "
+                    "a catchy phrase or a joke to make everyone smile!"
+                ),
+            },
+        ],
+    )
+    return completion.choices[0].message.content
 
 
 if __name__ == "__main__":
