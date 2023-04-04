@@ -238,6 +238,22 @@ def get_ai_menu_announcement(api_key, menu_text):
     import openai
 
     openai.api_key = api_key
+
+    # get a brief emoji summary of the menu
+    completion = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {
+                "role": "user",
+                "content": (
+                    'Summarize the following menu with emoji:\n\n"{}"\n\nExample:\n\n'
+                    '🍔🍟 - Hamburgers and fries\n🥦 - Bean patty burgers'
+                ).format(menu_text),
+            }
+        ],
+    )
+    summary = completion.choices[0].message.content
+
     completion = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
         messages=[
@@ -261,7 +277,11 @@ def get_ai_menu_announcement(api_key, menu_text):
             }
         ],
     )
-    return completion.choices[0].message.content
+    announcement = completion.choices[0].message.content
+
+    return "{announcement}\n\n>{summary}".format(
+        announcement=announcement, summary=summary.replace("\n", "\n>")
+    )
 
 
 def get_ai_holiday_announcement(api_key, holiday):
