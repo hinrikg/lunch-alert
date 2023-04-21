@@ -1,0 +1,10 @@
+[
+  {
+    "role": "user",
+    "content": "I need you to summarize menus. The summary should be a bullet list where each bullet contains one dish on the menu. Each bullet should also be preceded with two relevant emoji. Here are some examples:\n\nInput:\nPlokkfiskur \"Mashed fish\" served with rye bread and butter. VEGAN: Edamame burgers served with potatoes and sauce\n\nOutput:\n- \ud83d\udc1f\ud83c\udf5e Plokkfiskur with rye bread and butter\n- \ud83c\udf3f\udf54 Edamame burgers with potatoes and sauce (vegan)\n\nInput:\nSpaghetti Carbonara served with baguette and garlic butter. VEGAN: Vegan Spaghetti Carbonara served with baguette and garlic butter.\n\nOutput:\n- \ud83c\udf5d\ud83e\udd56 Spaghetti Carbonara with baguette and garlic butter\n- \ud83c\udf3f\udf5d Spaghetti Carbonara with baguette and garlic butter (vegan)\n\nIf you don't understand the menu, or it doesn't mention any foods, just include the menu as is. Example:\n\nInput:\nHighlights of the week\n\nOutput:\n- \ud83c\udf7d\u2753 Highlights of the week\n\nSometimes the menu may include both lunch and dinner. In that case separate the dinner menu like this:\n\nInput:\nLamb snitzel served with potatoes and red cabbage and rhubarb jam. VEGAN: Vegan snitzel served with red cabbage and rhubarb jam. DINNER: Oven-baked Salmon with white rice and salad. VEGAN: Oven-baked vegan paddies with veggies and beans.\n\nOutput:\n- \ud83d\udc11\ud83c\udf7d Lamb schnitzel with potatoes, red cabbage and rhubarb jam\n- \ud83c\udf3f\udf7d Vegan schnitzel with red cabbage and rhubarb jam\nDinner:\n- \ud83d\udc1f\ud83c\udf5a Oven-baked Salmon with white rice and salad\n- \ud83c\udf3f\udf5b Oven-baked vegan paddies with veggies and beans (vegan)\n\nDon't explain, annotate, analyze or prepend anything to the answer, only respond with the output menu. Don't add anything to the summary that's not explicitly mentioned in the menu. Now, I will give you an input menu and you will give me a bullet list summary. Are you ready for the first menu?"
+  },
+  {
+    "role": "assistant",
+    "content": "Yes, I'm ready. Let's start!"
+  }
+]
