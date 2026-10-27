@@ -169,6 +169,7 @@ def _fetch_events_with_retry(url, start, basic_auth_token=None, retries=3):
             if basic_auth_token:
                 headers["Authorization"] = "Basic {}".format(basic_auth_token)
             response = requests.get(url, headers=headers)
+            response.raise_for_status()
             fetched_events = icalevents.events(
                 string_content=response.content, start=start
             )
@@ -200,7 +201,8 @@ def get_lunch_summary(event):
 
 def send_message(text):
     logger.info("send_message %s", text)
-    requests.post(SLACK_URL, json={"text": text})
+    response = requests.post(SLACK_URL, json={"text": text})
+    response.raise_for_status()
 
 
 def now():
@@ -241,3 +243,4 @@ if __name__ == "__main__":
         main(sys.argv[1:])
     except Exception:
         logger.exception("Uncaught exception")
+        sys.exit(1)
